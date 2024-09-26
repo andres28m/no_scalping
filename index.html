@@ -101,7 +101,9 @@
             border-radius: 5px;
             background-color: #2a2a2a;
         }
+        
         .signals {
+            max-width: 100%;
             padding: 20px;
             text-align: center;
             font-size: 18px;
@@ -129,12 +131,13 @@
         .orderBook {
             display: flex;
             justify-content: space-between;
-            text-align: center;
+            
         }
 
         .orderBook div {
             width: 48%;
         }
+
         #bids, #high {
             color: #4caf50;
         }
@@ -171,7 +174,7 @@
             padding: 15px;
             margin: 10px;
             text-align: center;
-            width: 140px;
+            width: 100%;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s, background-color 0.3s;
         }
@@ -214,7 +217,7 @@
         .market-hours {
             display: flex;
             justify-content: center;
-            max-width: 600px;
+            max-width: 100%;
         }
 
         #market-hours-list {
@@ -231,6 +234,50 @@
             border-radius: 5px;
         }
 
+        .movimiento {
+            margin: 20px 0;
+        }
+
+        .movimiento ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 columnas */
+            gap: 20px; /* Espacio entre columnas */
+        }
+
+        .movimiento li {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .movimiento li:hover {
+            transform: translateY(-2px);
+        }
+        .precio-maximo {
+            color: green;
+            font-weight: bold;
+        }
+
+        .precio-minimo {
+            color: red;
+            font-weight: bold;
+        }
+
+        .precio-actual {
+            color: yellow;
+            font-weight: bold;
+        }
+    </style>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #prediction { margin-top: 20px; font-size: 1.2em; }
+        .long { color: green; }
+        .short { color: red; }
     </style>
 </head>
 <body>
@@ -462,10 +509,9 @@
             }
         }
 
-        async function updateIndicators() {
+       async function updateIndicators() {
             const coin = document.getElementById("coin").value;
             const interval = document.getElementById("interval").value;
-
             const apiURL = `https://api.binance.com/api/v3/klines?symbol=${coin}&interval=${interval}&limit=100`;
 
             try {
@@ -473,8 +519,8 @@
                 if (!response.ok) throw new Error(`Error en la API: ${response.statusText}`);
                 const data = await response.json();
 
-                const decimalPlaces = (coin === "FTMUSDT" || coin === "POPCATUSDT" || coin === "LQTYUSDT" || coin === "DOGSUSDT"|| coin === "TONUSDT"|| coin === "SHIBUSDT" || coin === "DOGEUSDT") ? 4 : 2;
-        
+                const decimalPlaces = (coin === "FTMUSDT" || coin === "POPCATUSDT" || coin === "LQTYUSDT" || coin === "DOGSUSDT" || coin === "TONUSDT" || coin === "SHIBUSDT" || coin === "DOGEUSDT") ? 4 : 2;
+
                 historicalPrices = data.map(item => parseFloat(item[4])); // Precio de cierre
 
                 const high = Math.max(...historicalPrices);
@@ -485,8 +531,7 @@
                 document.getElementById("low").innerText = `Mínimo: $${low.toFixed(decimalPlaces)}`;
                 document.getElementById("volume").innerText = `Volumen en 24h: ${volume.toFixed(decimalPlaces)}`;
 
-
-                // Calcular indicadores
+                // Calcular indicadores si hay suficientes datos
                 const sma = calculateSMA(historicalPrices, 14);
                 const ema = calculateEMA(historicalPrices, 14);
                 const rsi = calculateRSI(historicalPrices, 14);
@@ -494,21 +539,24 @@
                 const bollinger = calculateBollingerBands(historicalPrices);
                 const fibonacci = calculateFibonacci(historicalPrices);
 
-
-                // Mostrar indicadores
-                document.getElementById("sma").innerText = `SMA: $${sma.toFixed(decimalPlaces)}`;
-                document.getElementById("ema").innerText = `EMA: $${ema.toFixed(decimalPlaces)}`;
-                document.getElementById("rsi").innerText = `RSI: ${rsi.toFixed(decimalPlaces)}`;
-                document.getElementById("macd").innerText = `MACD: ${macd.toFixed(decimalPlaces)}`;
-                document.getElementById("bollinger").innerText = `Bandas de Bollinger: $${bollinger.upper.toFixed(decimalPlaces)} / $${bollinger.lower.toFixed(decimalPlaces)}`;
+                // Mostrar indicadores si no son null
+                if (sma !== null) document.getElementById("sma").innerText = `SMA: $${sma.toFixed(decimalPlaces)}`;
+                if (ema !== null) document.getElementById("ema").innerText = `EMA: $${ema.toFixed(decimalPlaces)}`;
+                if (rsi !== null) document.getElementById("rsi").innerText = `RSI: ${rsi.toFixed(decimalPlaces)}`;
+                if (macd !== null) document.getElementById("macd").innerText = `MACD: ${macd.toFixed(decimalPlaces)}`;
+                if (bollinger !== null) {
+                    document.getElementById("bollinger").innerText = `Bandas de Bollinger: $${bollinger.upper.toFixed(decimalPlaces)} / $${bollinger.lower.toFixed(decimalPlaces)}`;
+                }
                 document.getElementById("fibonacci").innerText = `Fibonacci: ${fibonacci.join(', ')}`;
 
                 const newsImpact = await analyzeNews();
                 document.getElementById("prediction").innerHTML = predictMarket(newsImpact, sma, ema, rsi, macd);
 
-                // Actualizar señales
-                updateTradingSignals(sma, ema, rsi);
-                
+                // Actualizar señales solo si los indicadores son válidos
+                if (sma !== null && ema !== null && rsi !== null) {
+                    updateTradingSignals(sma, ema, rsi);
+                }
+
             } catch (error) {
                 console.error("Error:", error);
             }
@@ -532,56 +580,88 @@
         }
 
         function calculateSMA(data, period) {
-            const sum = data.slice(-period).reduce((a, b) => a + b, 0);
-            return sum / period;
+            if (data.length >= period) {
+                const sum = data.slice(-period).reduce((a, b) => a + b, 0);
+                return sum / period;
+            } else {
+                console.warn(`No hay suficientes datos para calcular SMA. Se requieren al menos ${period} datos.`);
+                return null; // Retorna null si no hay suficientes datos
+            }
         }
 
         function calculateEMA(data, period) {
-            const k = 2 / (period + 1);
-            return data.reduce((acc, price, index) => {
-                if (index === 0) return price; // Primer valor
-                return (price * k) + (acc * (1 - k));
-            });
+            if (data.length >= period) {
+                const k = 2 / (period + 1);
+                return data.reduce((acc, price, index) => {
+                    if (index === 0) return price; // Primer valor
+                    return (price * k) + (acc * (1 - k));
+                });
+            } else {
+                console.warn(`No hay suficientes datos para calcular EMA. Se requieren al menos ${period} datos.`);
+                return null;
+            }
         }
 
         function calculateRSI(data, period) {
-            let gains = 0, losses = 0;
-            for (let i = 1; i < period; i++) {
-                const change = data[i] - data[i - 1];
-                if (change >= 0) gains += change;
-                else losses -= change;
+            if (data.length >= period + 1) {
+                let gains = 0, losses = 0;
+                for (let i = 1; i <= period; i++) {
+                    const change = data[i] - data[i - 1];
+                    if (change >= 0) gains += change;
+                    else losses -= change;
+                }
+                const averageGain = gains / period;
+                const averageLoss = losses / period;
+                const rs = averageGain / averageLoss;
+                return 100 - (100 / (1 + rs));
+            } else {
+                console.warn(`No hay suficientes datos para calcular RSI. Se requieren al menos ${period + 1} datos.`);
+                return null;
             }
-            const averageGain = gains / period;
-            const averageLoss = losses / period;
-            const rs = averageGain / averageLoss;
-            return 100 - (100 / (1 + rs));
         }
 
         function calculateMACD(data) {
-            const shortEma = calculateEMA(data, 12);
-            const longEma = calculateEMA(data, 26);
-            return shortEma - longEma;
+            if (data.length >= 26) {  // Se asume EMA(12) y EMA(26)
+                const shortEma = calculateEMA(data, 12);
+                const longEma = calculateEMA(data, 26);
+                if (shortEma !== null && longEma !== null) {
+                    return shortEma - longEma;
+                } else {
+                    console.warn("No se puede calcular MACD porque los EMA no se calcularon correctamente.");
+                    return null;
+                }
+            } else {
+                console.warn("No hay suficientes datos para calcular MACD. Se requieren al menos 26 datos.");
+                return null;
+            }
         }
 
         function calculateBollingerBands(data) {
-            const sma = calculateSMA(data, 20);
-            const stdDev = Math.sqrt(data.slice(-20).reduce((acc, price) => acc + Math.pow(price - sma, 2), 0) / 20);
-            return {
-                upper: sma + (stdDev * 2),
-                lower: sma - (stdDev * 2)
-            };
+            const period = 20; // Suponiendo que usas un periodo de 20
+            if (data.length >= period) {
+                const sma = calculateSMA(data, period);
+                const stdDev = Math.sqrt(data.slice(-period).reduce((acc, price) => acc + Math.pow(price - sma, 2), 0) / period);
+                return {
+                    upper: sma + (stdDev * 2),
+                    lower: sma - (stdDev * 2)
+                };
+            } else {
+                console.warn(`No hay suficientes datos para calcular Bandas de Bollinger. Se requieren al menos ${period} datos.`);
+                return null;
+            }
         }
 
         function calculateFibonacci(data) {
-            const max = Math.max(...data);
-            const min = Math.min(...data);
-            const difference = max - min;
+            const high = Math.max(...data);
+            const low = Math.min(...data);
+            const diff = high - low;
             return [
-                max,
-                max - (difference * 0.236),
-                max - (difference * 0.382),
-                max - (difference * 0.618),
-                min
+                high,
+                high - 0.236 * diff,
+                high - 0.382 * diff,
+                high - 0.5 * diff,
+                high - 0.618 * diff,
+                low
             ];
         }
 
@@ -609,15 +689,13 @@
         }
 
         function predictMarket(newsImpact, sma, ema, rsi, macd) {
-            let prediction = "Mantener posición.";
-            if (rsi < 30 && ema > sma) {
-                prediction = `<span class="long">Se sugiere ir Long (comprar).</span>`;
-                showNotification("Oportunidad de Compra", "El RSI está por debajo de 30, podrías considerar comprar.");
-            } else if (rsi > 70 && ema < sma) {
-                prediction = `<span class="short">Se sugiere ir Short (vender).</span>`;
-                showNotification("Oportunidad de Venta", "El RSI está por encima de 70, podrías considerar vender.");
+            let prediction = "Tendencia neutra.";
+            if (newsImpact === "positivo" && sma > ema && rsi > 50 && macd > 0) {
+                prediction = "Tendencia alcista.";
+            } else if (newsImpact === "negativo" && sma < ema && rsi < 50 && macd < 0) {
+                prediction = "Tendencia bajista.";
             }
-            return prediction;
+            return `Predicción del mercado: ${prediction}`;
         }
 
         function updateTradingSignals(sma, ema, rsi) {
@@ -658,7 +736,7 @@
                             {
                                 label: 'Precio',
                                 data: [], // Aquí se agregarán los precios
-                                borderColor: 'rgba(105, 210, 231, 1)',
+                                borderColor: '#0e72ec',
                                 borderWidth: 2,
                                 fill: false,
                             },
