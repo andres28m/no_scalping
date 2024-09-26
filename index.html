@@ -471,7 +471,51 @@
         </select>
         <button id="fetchDataBtn" onclick="startFetching()">Comenzar Analysis</button>
 
-        <div class="input-section">
+        
+
+
+        <div id="loader">Cargando...</div>
+        <div id="countdown">Próxima solicitud en: 0 segundos</div>
+
+        <div class="result" id="result">
+            <div id="price">Precio actual: Cargando...</div>
+            <div id="high">Máximo: Cargando...</div>
+            <div id="low">Mínimo: Cargando...</div>
+            <div id="volume">Volumen en 24h: Cargando...</div>
+
+            <div id="prediction">Predicción: Cargando...</div>
+            <div class="orderBook" id="orderBook">
+                <div id="bids">Órdenes de Compra: Cargando...</div>
+                <div id="asks">Órdenes de Venta: Cargando...</div>
+            </div>
+            
+        </div>
+
+        <h2>Indicadores</h2>
+        <div class="indicators" id="indicators" style="margin-bottom: 10px;">
+            <div id="sma">SMA: Cargando...</div>
+            <div id="ema">EMA: Cargando...</div>
+            <div id="rsi">RSI: Cargando...</div>
+            <div id="macd">MACD: Cargando...</div>
+            <div id="bollinger">Bandas de Bollinger: Cargando...</div>
+            <div id="fibonacci">Fibonacci: Cargando...</div>
+        </div>
+
+        <h2>Gráfica en Tiempo Real</h2>
+        <canvas id="chart"></canvas>
+
+        <h2>Señales de Trading</h2>
+        <div class="signals" id="signals">
+            <div class="signal">Señales: Cargando...</div>
+        </div>
+
+        <h2>Predicciones</h2>
+        <div id="news" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px; background-color: #2c2c2c;">
+            Noticias: Cargando...
+        </div>
+    </div>
+    
+    <div class="input-section">
         <select id="criptoSelect">
             <option value="BTCUSDT">Bitcoin (BTC/USDT)</option>
                 <option value="ETHUSDT">Ethereum (ETH/USDT)</option>
@@ -516,48 +560,6 @@
             </ul>
     
         </div>
-
-
-        <div id="loader">Cargando...</div>
-        <div id="countdown">Próxima solicitud en: 0 segundos</div>
-
-        <div class="result" id="result">
-            <div id="price">Precio actual: Cargando...</div>
-            <div id="high">Máximo: Cargando...</div>
-            <div id="low">Mínimo: Cargando...</div>
-            <div id="volume">Volumen en 24h: Cargando...</div>
-
-            <div id="prediction">Predicción: Cargando...</div>
-            <div class="orderBook" id="orderBook">
-                <div id="bids">Órdenes de Compra: Cargando...</div>
-                <div id="asks">Órdenes de Venta: Cargando...</div>
-            </div>
-            
-        </div>
-
-        <h2>Indicadores</h2>
-        <div class="indicators" id="indicators" style="margin-bottom: 10px;">
-            <div id="sma">SMA: Cargando...</div>
-            <div id="ema">EMA: Cargando...</div>
-            <div id="rsi">RSI: Cargando...</div>
-            <div id="macd">MACD: Cargando...</div>
-            <div id="bollinger">Bandas de Bollinger: Cargando...</div>
-            <div id="fibonacci">Fibonacci: Cargando...</div>
-        </div>
-
-        <h2>Gráfica en Tiempo Real</h2>
-        <canvas id="chart"></canvas>
-
-        <h2>Señales de Trading</h2>
-        <div class="signals" id="signals">
-            <div class="signal">Señales: Cargando...</div>
-        </div>
-
-        <h2>Predicciones</h2>
-        <div id="news" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 5px; background-color: #2c2c2c;">
-            Noticias: Cargando...
-        </div>
-    </div>
 
     <script>
         // Funciones de almacenamiento de preferencias
