@@ -27,7 +27,7 @@
         .container {
            
             max-width: 100%;
-            padding: 20px;
+            padding: 8px;
             background: rgba(255, 255, 255, 0.1);
             border: 2px solid #1b263b;
             border-radius: 15px;
@@ -56,7 +56,7 @@
             border-radius: 10px;
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
         }
-        .market-hours, .signals { 
+        .market-hours { 
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px; /* Espacio entre columnas */
@@ -272,6 +272,32 @@
             color: yellow;
             font-weight: bold;
         }
+
+      /* Estilos CSS para las señales con colores */
+.signal.neutral {
+    color: gray;
+}
+.signal.strong-buy {
+    color: green;
+    font-weight: bold;
+}
+.signal.buy {
+    color: lightgreen;
+}
+.signal.sell {
+    color: red;
+}
+.signal.strong-sell {
+    color: darkred;
+    font-weight: bold;
+}
+#signals {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 4 columnas iguales */
+    gap: 10px; /* Espacio entre las señales */
+}
+
+
     </style>
     <style>
         body { font-family: Arial, sans-serif; }
@@ -311,10 +337,10 @@
             <option value="1m">1 minuto</option>
             <option value="5m">5 minutos</option>
             <option value="15m">15 minutos</option>
-            <option value="30m">30 minutos</option>
             <option value="1h">1 hora</option>
             <option value="4h">4 horas</option>
             <option value="1d">1 día</option>
+            
         </select>
         <button class="btn" id="fetchDataBtn" onclick="startFetching()">Comenzar Análisis</button>
 
@@ -335,6 +361,8 @@
 
             <div id="volume">Volumen en 24h: Cargando...</div>
 
+            <div class="signals" id="signals">Señales: Cargando...</div>
+
             <div class="orderBook" id="orderBook">
                 <div id="bids">Órdenes de Compra: Cargando...</div>
                 <div id="asks">Órdenes de Venta: Cargando...</div>
@@ -353,7 +381,8 @@
         </div>
 
         
-        <div class="signals" id="signals">Señales: Cargando...</div>
+        
+
 
         <br>
         <canvas id="chart"></canvas>
@@ -564,21 +593,34 @@
 
         async function fetchNews() {
             const newsApiKey = '6b7b0f8817d34d31b6cb59a8c7e40e54'; // Cambia esta clave si es necesario
-            const newsApiURL = `https://newsapi.org/v2/everything?q=cryptocurrency&apiKey=${newsApiKey}`;
-
+            const newsApiURL = `https://newsapi.org/v2/everything?q=cryptocurrency&from=2024-10-01&apiKey=${newsApiKey}`;
+        
             try {
                 const response = await fetch(newsApiURL);
-                if (!response.ok) throw new Error(`Error en la API de Noticias: ${response.statusText}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error en la API de Noticias: ${response.statusText} (Código: ${response.status})`);
+                }
+        
                 const newsData = await response.json();
-
-                const newsHtml = newsData.articles.map(article => `<div>${article.title} - ${new Date(article.publishedAt).toLocaleString()}</div>`).join('');
-                document.getElementById("news").innerHTML = newsHtml || 'No hay noticias disponibles.';
+        
+                // Verificar si hay artículos antes de intentar mapear
+                if (newsData.articles && newsData.articles.length > 0) {
+                    const newsHtml = newsData.articles.map(article => 
+                        `<div>${article.title} - ${new Date(article.publishedAt).toLocaleString()}</div>`
+                    ).join('');
+        
+                    document.getElementById("news").innerHTML = newsHtml;
+                } else {
+                    document.getElementById("news").innerText = 'No hay noticias disponibles.';
+                }
+        
             } catch (error) {
-                console.error("Error al cargar noticias:", error);
-                document.getElementById("news").innerText = 'Error al cargar noticias.';
+                console.error("Error al cargar noticias:", error.message || error);
+                document.getElementById("news").innerText = 'Error al cargar noticias. Por favor, intenta nuevamente más tarde.';
             }
         }
-
+        
         function calculateSMA(data, period) {
             if (data.length >= period) {
                 const sum = data.slice(-period).reduce((a, b) => a + b, 0);
@@ -667,63 +709,89 @@
 
         async function analyzeNews() {
             const newsApiKey = '6b7b0f8817d34d31b6cb59a8c7e40e54'; // Cambia esta clave si es necesario
-            const newsApiURL = `https://newsapi.org/v2/everything?q=cryptocurrency&apiKey=${newsApiKey}`;
+            const newsApiURL = `https://newsapi.org/v2/everything?q=cryptocurrency&from=2024-10-01&apiKey=${newsApiKey}`;
+            
             try {
                 const response = await fetch(newsApiURL);
                 const newsData = await response.json();
-                const keywords = ['bueno', 'positivo', 'alcista', 'mal', 'negativo', 'bajista'];
-                let impact = '';
-
+                const keywordsPositive = ['bueno', 'positivo', 'alcista'];
+                const keywordsNegative = ['mal', 'negativo', 'bajista'];
+                let positiveCount = 0;
+                let negativeCount = 0;
+        
                 newsData.articles.forEach(article => {
                     const title = article.title.toLowerCase();
-                    if (keywords.some(keyword => title.includes(keyword))) {
-                        impact = title.includes('mal') || title.includes('negativo') ? 'short' : 'long';
+        
+                    // Verifica si contiene palabras positivas
+                    if (keywordsPositive.some(keyword => title.includes(keyword))) {
+                        positiveCount++;
+                    }
+        
+                    // Verifica si contiene palabras negativas
+                    if (keywordsNegative.some(keyword => title.includes(keyword))) {
+                        negativeCount++;
                     }
                 });
-
-                return impact || 'neutral';
+        
+                // Determina el impacto basado en los conteos
+                if (positiveCount > negativeCount) {
+                    return 'positivo';
+                } else if (negativeCount > positiveCount) {
+                    return 'negativo';
+                } else {
+                    return 'neutral';
+                }
             } catch (error) {
                 console.error("Error al analizar noticias:", error);
                 return 'neutral';
             }
         }
-
+        
         function predictMarket(newsImpact, sma, ema, rsi, macd) {
             let prediction = "Tendencia neutra.";
+            
             if (newsImpact === "positivo" && sma > ema && rsi > 50 && macd > 0) {
                 prediction = "Tendencia alcista.";
             } else if (newsImpact === "negativo" && sma < ema && rsi < 50 && macd < 0) {
                 prediction = "Tendencia bajista.";
             }
+            
             return `Predicción del mercado: ${prediction}`;
         }
+        
 
         function updateTradingSignals(sma, ema, rsi) {
             const signals = {
                 "1m": 'Neutral',
                 "5m": 'Neutral',
                 "15m": 'Neutral',
-                "30m": 'Neutral',
                 "1h": 'Neutral',
                 "4h": 'Neutral',
                 "1d": 'Neutral'
             };
-
+        
+            // Condiciones para actualizar las señales
             if (rsi < 30 && ema > sma) {
                 signals["1m"] = 'Strong Buy';
             } else if (rsi < 40 && ema > sma) {
                 signals["5m"] = 'Buy';
             } else if (rsi > 60 && ema < sma) {
                 signals["15m"] = 'Sell';
-            } else if (rsi > 70 && ema < sma) {
-                signals["30m"] = 'Strong Sell';
+            } else if (rsi > 80 && ema < sma) {
+                signals["1h"] = 'Strong Sell';
+                signals["4h"] = 'Strong Sell';
+            } else if (rsi > 90 && ema < sma) {
+                signals["1d"] = 'Strong Sell';
             }
-
+        
+            // Actualización del HTML con colores basados en las señales
             document.getElementById("signals").innerHTML = Object.keys(signals).map(key => {
-                const signalClass = signals[key].toLowerCase().replace(" ", "-");
+                const signalClass = signals[key].toLowerCase().replace(/ /g, "-");
                 return `<div class="signal ${signalClass}">${key}: ${signals[key]}</div>`;
             }).join('');
         }
+        
+        
 
         function updateChart(price) {
             if (!chartInstance) {
@@ -736,7 +804,7 @@
                             {
                                 label: 'Precio',
                                 data: [], // Aquí se agregarán los precios
-                                borderColor: '#0e72ec',
+                                borderColor: 'rgba(105, 210, 231, 1)',
                                 borderWidth: 2,
                                 fill: false,
                             },
@@ -877,9 +945,9 @@
                     const li = document.createElement('li');
                     li.innerHTML = `
                         Intervalo ${mov.intervalo}:<br>
-                        Max: <span class="precio-maximo">${mov.maximo.toFixed(2)}</span><br>
-                        Precio Actual: <span class="precio-actual">${precioActual.toFixed(2)}</span><br>
-                        Min: <span class="precio-minimo">${mov.minimo.toFixed(2)}</span><br>
+                        Max: <span class="precio-maximo">${mov.maximo.toFixed(5)}</span><br>
+                        Precio Actual: <span class="precio-actual">${precioActual.toFixed(5)}</span><br>
+                        Min: <span class="precio-minimo">${mov.minimo.toFixed(5)}</span><br>
                         % Desde el Mínimo: <span class="precio-minimo">${mov.porcentajeDesdeMinimo}%</span><br>
                         % Desde el Máximo: <span class="precio-maximo">${mov.porcentajeDesdeMaximo}%</span>
                     `;
